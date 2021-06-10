@@ -1,7 +1,6 @@
 module.exports = {
     async edit(req, res) {
         const cube = await req.storage.getById(req.params.id);
-        console.log();
         cube[`select${cube.difficultyLevel}`] = true;
 
         if (cube === undefined) {
