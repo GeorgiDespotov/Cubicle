@@ -1,51 +1,48 @@
-const fs = require('fs/promises');
-const uniqid = require('uniqid');
-
-let data = {};
+; const Cube = require('../models/Cube');
+const Comment = require('../models/Comments');
 
 async function init() {
-    try {
-        data = JSON.parse(await fs.readFile('./models/data.json'));
-    } catch (err) {
-        console.error('Error reading database');
-    }
 
     return (req, res, next) => {
         req.storage = {
             getAll,
             getById,
             create,
-            edit
+            edit,
+            createComment
         };
         next();
     };
 }
 
 async function getAll(query) {
-    let cubes = Object
-        .entries(data)
-        .map(([id, v]) => Object.assign({}, { id }, v));
+    const options = {};
 
     if (query.search) {
-        cubes = cubes.filter(c => c.name.toLowerCase().includes(query.search.toLowerCase()));
+        options.name = { $regex: query.search, $options: 'i' };
     }
 
     if (query.from) {
-        cubes = cubes.filter(c => c.difficultyLevel >= Number(query.from));
+        options.difficultyLevel = { $gte: Number(query.from) };
     }
 
     if (query.to) {
-        cubes = cubes.filter(c => c.difficultyLevel <= Number(query.to));
+        options.difficultyLevel = options.difficultyLevel || {};
+        options.difficultyLevel.$lte = Number(query.to);
+        
+        // cubes = cubes.filter(c => c.difficultyLevel <= Number(query.to));
     }
+
+    const cubes = Cube.find(options);
 
     return cubes;
 }
 
 async function getById(id) {
-    const cube = data[id];
+    const cube = await Cube.findById(id).populate('comments');
 
     if (cube) {
-        return Object.assign({}, { id }, cube)
+        return cube;
     } else {
         return undefined;
     }
@@ -53,29 +50,33 @@ async function getById(id) {
 }
 
 async function create(cube) {
-    const id = uniqid();
-    data[id] = cube;
-
-    await persist();
+    const record = new Cube(cube);
+    return record.save();
 }
 
 async function edit(id, cube) {
-    if (!data[id]) {
+    const existing = await Cube.findById(id);
+
+    if (!existing) {
         throw new ReferenceError('No such id in database');
     }
-   
-    data[id] = cube;
 
-    await persist();
+    Object.assign(existing, cube);
+    return existing.save();
 }
 
-async function persist() {
-    try {
-        await fs.writeFile('./models/data.json', JSON.stringify(data, null, 2));
-        console.log('>>> created');
-    } catch (err) {
-        console.error('Error writin out database');
+async function createComment(cubeId, comment) {
+    const cube = await Cube.findById(cubeId);
+
+    if (!cube) {
+        throw new ReferenceError('No such id in database');
     }
+
+    const newComment = new Comment(comment);
+    await newComment.save();
+
+    cube.comments.push(newComment);
+    await cube.save();
 }
 
 module.exports = {
@@ -83,5 +84,5 @@ module.exports = {
     getAll,
     getById,
     create,
-    
+    createComment
 }

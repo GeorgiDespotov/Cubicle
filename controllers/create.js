@@ -9,8 +9,13 @@ module.exports = {
             imageUrl: req.body.imageUrl,
             difficultyLevel: Number(req.body.difficultyLevel)
         };
-
-        await req.storage.create(cube)
+        try {
+            await req.storage.create(cube)
+        } catch (err) {
+            if (err.name == 'ValidationError') {
+                return res.render('create', { title: 'Create', error: 'Invalid input!' });
+            }
+        }
 
         res.redirect('/');
     }
