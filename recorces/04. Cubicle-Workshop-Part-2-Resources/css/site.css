@@ -90,6 +90,7 @@ p.name {
     border-bottom: 1px solid #2b415433;
 }
 
+
 button, main a.btn {
     border: none;
     padding: 8px;
@@ -97,9 +98,8 @@ button, main a.btn {
     text-decoration: none;
     display: inline-block;
     font-size: 18px;
-    width: 43%;
+    width: 35%;
     margin: 12px;
-    margin-left: 6%;
     border-radius: 4px;
     background: #607588;
     color: white;
@@ -228,7 +228,6 @@ img#sadFaceImg{
 h2{
     text-align: center;
 }
-
 
 .accessories .accessory{
     display: inline-block;

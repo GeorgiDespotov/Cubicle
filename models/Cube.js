@@ -5,7 +5,8 @@ const schema = new Schema({
     description: { type: String, required: true, maxLength: 500 },
     imageUrl: { type: String, required: true, match: /^https?:\/\// },
     difficultyLevel: { type: Number, min: 1, max: 6 },
-    comments: [{ type: Schema.Types.ObjectId, ref: 'Comments' }]
+    comments: [{ type: Schema.Types.ObjectId, ref: 'Comments' }],
+    accessories: [{ type: Schema.Types.ObjectId, ref: 'Accessory' }]
 });
 
 module.exports = model('Cube', schema);
