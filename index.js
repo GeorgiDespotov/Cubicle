@@ -3,7 +3,8 @@ const expressConfig = require('./config/express');
 const databeseConfig = require('./config/database');
 const routsConfig = require('./config/routs');
 
-const { init: storage } = require('./services/storage');
+const storage = require('./middlewears/storage');
+const logger = require('./middlewears/logger');
 
 
 
@@ -14,8 +15,11 @@ async function start() {
     const port = 3000;
     const app = express();
 
-    expressConfig(app);
+    app.use(logger())
+
     await databeseConfig(app);
+    expressConfig(app);
+
     app.use(await storage());
     routsConfig(app);
 
