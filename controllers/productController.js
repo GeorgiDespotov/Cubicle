@@ -1,3 +1,6 @@
+const { isAuth, isOwner } = require('../middlewears/guards');
+const { preloadCube } = require('../middlewears/preload');
+
 const router = require('express').Router();
 
 router.get('/', async (req, res) => {
@@ -13,16 +16,17 @@ router.get('/', async (req, res) => {
     res.render('index', ctx);
 });
 
-router.get('/create', (req, res) => {
+router.get('/create', isAuth(), (req, res) => {
     res.render('create', { title: 'Create' });
 });
 
-router.post('/create', async (req, res) => {
+router.post('/create', isAuth(), async (req, res) => {
     const cube = {
         name: req.body.name,
         description: req.body.description,
         imageUrl: req.body.imageUrl,
-        difficultyLevel: Number(req.body.difficultyLevel)
+        difficultyLevel: Number(req.body.difficultyLevel),
+        author: req.user._id
     };
     try {
         await req.storage.create(cube)
@@ -34,12 +38,16 @@ router.post('/create', async (req, res) => {
     res.redirect('/');
 });
 
-router.get('/details/:id', async (req, res) => {
-    const cube = await req.storage.getById(req.params.id);
+router.get('/details/:id', preloadCube(), async (req, res) => {
+    const cube = req.data.cube;
+   
 
     if (cube == undefined) {
         res.redirect('/404')
     } else {
+
+        cube.isOwner = req.user && (cube.authorId == req.user._id); 
+
         const ctx = {
             title: 'Details',
             cube
@@ -48,13 +56,14 @@ router.get('/details/:id', async (req, res) => {
     }
 });
 
-router.get('/edit/:id', async (req, res) => {
-    const cube = await req.storage.getById(req.params.id);
-    cube[`select${cube.difficultyLevel}`] = true;
-
-    if (cube === undefined) {
+router.get('/edit/:id', preloadCube(), isOwner(), async (req, res) => {
+    const cube = req.data.cube;
+    
+    if (!cube) {
         res.redirect('/404')
     } else {
+        cube[`select${cube.difficultyLevel}`] = true;
+
         const ctx = {
             title: 'Edit Cube',
             cube
@@ -63,7 +72,7 @@ router.get('/edit/:id', async (req, res) => {
     }
 });
 
-router.post('/edit/:id', async (req, res) => {
+router.post('/edit/:id', preloadCube(), isOwner(), async (req, res) => {
     const cube = {
         name: req.body.name,
         description: req.body.description,
